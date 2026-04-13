@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Consumer.Application/Consumer.Application.csproj" />
+  <Project Path="Consumer.Domain/Consumer.Domain.csproj" />
+  <Project Path="Consumer.Infrastructure/Consumer.Infrastructure.csproj" />
+  <Project Path="ConsumerService/ConsumerService.csproj" />
+  <Project Path="ConsumerTests/ConsumerTests.csproj" />
+</Solution>

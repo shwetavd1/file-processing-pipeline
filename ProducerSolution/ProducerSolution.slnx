@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Producer.Application/Producer.Application.csproj" Id="e0a7690d-e39f-4244-bf68-7e6fbf2043f8" />
+  <Project Path="Producer.Domain/Producer.Domain.csproj" Id="e3a88a96-243e-4ed4-96a9-849f30b5bc8f" />
+  <Project Path="Producer.Infrastructure/Producer.Infrastructure.csproj" Id="7cfd2252-76ae-471c-9636-055f88c29be1" />
+  <Project Path="Producer.Tests/Producer.Tests.csproj" Id="39aa021d-20f7-4324-96df-fa1a200ef4e0" />
+  <Project Path="ProducerService/ProducerService.csproj" />
+</Solution>
