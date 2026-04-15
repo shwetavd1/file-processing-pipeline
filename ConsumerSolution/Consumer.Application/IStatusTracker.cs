@@ -1,8 +1,11 @@
 ﻿using System;
 
-public interface IStatusTracker
+namespace Consumer.Application
 {
-	void MarkAsPending(int messageId);
-	void MarkAsCompleted(int messageId);
-	void MarkAsFailed(int messageId, string reason);
+	public interface IStatusTracker
+	{
+		void MarkAsPending(int messageId);
+		void MarkAsCompleted(int messageId);
+		void MarkAsFailed(int messageId, string reason);
+	}
 }

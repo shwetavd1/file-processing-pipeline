@@ -1,4 +1,7 @@
-﻿namespace Consumer.Infrastructure //Infrasturucture layer contains actual implementation
+﻿using Consumer.Application;
+using Consumer.Domain;
+
+namespace Consumer.Infrastructure //Infrasturucture layer contains actual implementation
 {
     public class CsvToJsonConverter : ICsvToJsonConverter // Interface defines what to do, class defines how to do [Abstraction+Dependency Inversion]
     {
@@ -16,7 +19,7 @@
             {
                 throw new Exception("No data rows found in CSV");
             }
-            foreach (var line in lines.Skip(1) //skip header // Loop through all rows except first because first row is header
+            foreach (var line in lines.Skip(1)) //skip header // Loop through all rows except first because first row is header
             {
                 try //used try catch for if one row fails, others still process, to make system robust
                 {

@@ -2,8 +2,10 @@
 using Consumer.Domain;
 
 namespace Consumer.Application
-
-public interface IMessageConsumer
 {
-	Task<MessageData> ConsumeAsync(); 
-} //reads message from queue
+	public interface IMessageConsumer
+	{
+		event Action<MessageData> OnMessageReceived;// interface defines contract, Event should be part of contract so worker doesn't depend on concrete class
+		Task<MessageData> ConsumeAsync();
+	} //reads message from queue
+}
