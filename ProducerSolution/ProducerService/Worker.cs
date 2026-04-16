@@ -1,23 +1,73 @@
+using Producer.Application;
+
 namespace ProducerService
 {
-    public class Worker : BackgroundService
+    public class Worker : BackgroundService //to run code continuously in background
     {
-        private readonly ILogger<Worker> _logger;
+        // dependencies
+        private readonly IFileFetcher _fileFetcher;
+        private readonly IFileProcessor _fileProcessor;
+        private readonly IConverterStrategy _converterStrategy;
+        private readonly ProducerEvents _events;
+        //private readonly IMessagePublisher _publisher;
 
-        public Worker(ILogger<Worker> logger)
+        //inject dependencies
+        public Worker(IFileFetcher fileFetcher, IFileProcessor fileProcessor, IConverterStrategy converterStrategy, ProducerEvents events)
         {
-            _logger = logger;
+            _fileFetcher = fileFetcher;
+            _fileProcessor = fileProcessor;
+            _converterStrategy = converterStrategy;
+            _events = events;
+            //_publisher = publisher;
+
+            // subscribed the event
+            _events.OnFileProcessed += (fileName) =>
+            {
+                Console.WriteLine($"File Processed successfully {fileName}");
+            };
         }
 
+        //batch processor
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            var folderPath = "D:\\Files";
+
+            while(!stoppingToken.IsCancellationRequested)
             {
-                if (_logger.IsEnabled(LogLevel.Information))
+                try
                 {
-                    _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                    Console.WriteLine("fetching files");
+                    //fetching xml files
+                    var files = await _fileFetcher.GetFilesAsync(folderPath);
+                    foreach(var file in files)
+                    {
+                        try
+                        {
+                            //process files
+                            var processedFile = await _fileProcessor.ProcessAsync(file);
+
+                            //convert xml to csv
+                            var csvData = await _converterStrategy.ConvertAsync(processedFile.Content);
+
+                            _events.RaiseFileProcessed(processedFile.FileName);
+
+                            Console.WriteLine($"CSV generated file for: {processedFile.FileName}");
+
+                            //output
+                            Console.WriteLine(csvData);
+                            //_publisher.Publish(csvData);
+                        }
+                        catch(Exception ex)
+                        {
+                            Console.WriteLine($"Error processing file {file.FileName}: {ex.Message}");
+                        }
+                    }
                 }
-                await Task.Delay(1000, stoppingToken);
+                catch(Exception ex)
+                {
+                    Console.WriteLine($"Error in execution : {ex.Message}");
+                }
+                await Task.Delay(10000, stoppingToken); // wait 10sec, time interval
             }
         }
     }
