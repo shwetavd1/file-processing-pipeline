@@ -12,7 +12,7 @@ builder.Services.AddSingleton<IFileFetcher, FileFetcher>();
 builder.Services.AddSingleton<IFileProcessor, FileProcessor>();
 builder.Services.AddSingleton<IConverterStrategy, XmlToCsvConverter>();
 builder.Services.AddSingleton<ProducerEvents>();
-//builder.Services.AddSingleton<IMessagePublisher, MessagePublisher>();
+builder.Services.AddSingleton<IMessagePublisher, MessagePublisher>();
 
 var host = builder.Build();
 host.Run();

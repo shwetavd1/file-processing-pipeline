@@ -29,25 +29,19 @@ namespace ConsumerService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            /*while (!stoppingToken.IsCancellationRequested)
-            {
-                //trigger message consumption
-                await _consumer.ConsumeAsync();
-                await Task.Delay(5000, stoppingToken); //execute loop for every 5 seconds
-            }*/
-            try
-            {
-                await _consumer.ConsumeAsync(); // this will start consuming messages and will call HandleMessageReceived when message is received
+            Console.WriteLine("Worker started. Waiting for messages...");
+            await _consumer.ConsumeAsync(); //start  consuming message from rabbitMQ
+            while (!stoppingToken.IsCancellationRequested)
+            {  
+                await Task.Delay(1000); //execute loop for every 5 seconds
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            
         }
         private async void HandleMessageReceived(MessageData message)
         {
             try 
             {
+                Console.WriteLine("Message received from RabbitMQ");
                 Console.WriteLine($"Processing message {message.Id}");
                 _statusTracker.MarkAsPending(message.Id); // mark as pending
                 var result = await _converter.ConvertAsync(message.CsvContent);// convert csv-> json

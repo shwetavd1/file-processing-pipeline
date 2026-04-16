@@ -6,7 +6,7 @@ var builder = Host.CreateApplicationBuilder(args); // Host.CreateApplicationBuil
 
 builder.Services.AddHostedService<Worker>(); //run worker automatically when application starts
 
-builder.Services.AddSingleton<IMessageConsumer, MessageConsumer>();// AddSingleton registers a service as a singleton, meaning that only one instance of the service will be created and shared throughout the application's lifetime. In this case, it registers the MessageConsumer class as the implementation for the IMessageConsumer interface. Whenever a component requests an IMessageConsumer, it will receive the same instance of MessageConsumer.
+builder.Services.AddSingleton<IMessageConsumer, RabbitMQConsumer>();// AddSingleton registers a service as a singleton, meaning that only one instance of the service will be created and shared throughout the application's lifetime. In this case, it registers the MessageConsumer class as the implementation for the IMessageConsumer interface. Whenever a component requests an IMessageConsumer, it will receive the same instance of MessageConsumer.
 builder.Services.AddSingleton<ICsvToJsonConverter, CsvToJsonConverter>();
 builder.Services.AddSingleton<IStatusTracker, StatusTracker>();
 
