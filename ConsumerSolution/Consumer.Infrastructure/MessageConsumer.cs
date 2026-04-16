@@ -17,15 +17,15 @@ namespace Consumer.Infrastructure //Infrasturucture layer contains actual implem
         public async Task<MessageData> ConsumeAsync() //returns one message
         {
             //simulating message from queue
-            var message = new MessageData// creating fake message
+            var message1 = new MessageData// creating dummy CSV message
             {
                 Id = 1,
-                CsvContent = "Id,Name,Age\n 1,Prajakta, 25\n 2, Shweta, 24",
+                CsvContent = "Id,Name,Age\n 1, Prajakta, 25\n 2, Shweta",
                 ReceivedTime = DateTime.UtcNow
             };
             Console.WriteLine("message received from queue");
-            OnMessageReceived?.Invoke(message); // It triggers event. If someone is listening, notify them with message
-            return await Task.FromResult(message); // returns message in async format
+            OnMessageReceived?.Invoke(message1); // It triggers event. If someone is listening, notifys them with message
+            return await Task.FromResult(message1); // returns message in async format
         }
     }
 }

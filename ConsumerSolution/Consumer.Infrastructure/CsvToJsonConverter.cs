@@ -31,7 +31,7 @@ namespace Consumer.Infrastructure //Infrasturucture layer contains actual implem
                         throw new Exception($"Invalid row format:{line}");
                     }
                     //validation for safe parsing
-                    if (!int.TryParse(values[0], out int id))
+                    if (!int.TryParse(values[0], out int id)) // tryparse= let me check first, then convert //try converting- if it fails dont crash.
                     {
                         throw new Exception($"Invalid Id:{values[0]}");
                     }
@@ -41,7 +41,7 @@ namespace Consumer.Infrastructure //Infrasturucture layer contains actual implem
                     }
                     var data = new ProcessedData
                     {
-                        Id = int.Parse(values[0]),
+                        Id = int.Parse(values[0]), //parse()= use when data is trusted // i am sure the value is correct, just convert it. // parse throws an exception if convertsion fails.
                         Name = values[1],
                         Age = int.Parse(values[2]) // used int.Parse bcoz csv gives string but here id and age are numbers
                     };// convert string values into structured object
