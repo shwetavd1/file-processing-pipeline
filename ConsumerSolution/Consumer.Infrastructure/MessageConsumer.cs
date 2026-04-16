@@ -7,7 +7,7 @@ Need:
 In real system. Data comes from queue(RabbitMQ) and consumer reads message but right now RabbitMQ is not connected so we simulate it
 so this class pretend-> i received message from queue
  */
-namespace Consumer.Infrastructure //Infrasturucture layer contains actual implementation
+/*namespace Consumer.Infrastructure //Infrasturucture layer contains actual implementation
 {
     public class MessageConsumer : IMessageConsumer
     {
@@ -28,7 +28,7 @@ namespace Consumer.Infrastructure //Infrasturucture layer contains actual implem
             return await Task.FromResult(message1); // returns message in async format
         }
     }
-}
+}*/
 //here i am mocking message consumption later i will integrate with RabitMQ.
 // adding event because, instead of directly calling worker->converter->tracker we now say, message received-> notify system
 //befor adding event, worker controls everything but now events control flow

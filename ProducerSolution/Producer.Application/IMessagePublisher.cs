@@ -1,8 +1,8 @@
 ﻿
-//namespace Producer.Application
-//{
-//    public interface IMessagePublisher
-//    {
-//        void Publish(string message);
-//    }
-//}
+namespace Producer.Application
+{
+    public interface IMessagePublisher
+    {
+        void Publish(string message);
+    }
+}
