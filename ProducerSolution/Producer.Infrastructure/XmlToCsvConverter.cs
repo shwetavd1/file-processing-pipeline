@@ -29,9 +29,12 @@ namespace Producer.Infrastructure
                 Age = x.Element("Age")?.Value
             });
 
-            var csv = "Id,Name,Age\n" + string.Join("\n", records.Select(r =>
-            $"{r.Id},{r.Name},{r.Age}\n"));
+            // convert collection of records into csv
+            var csv = "Id,Name,Age\n" //headers
+                + string.Join("\n", // combines all
+                records.Select(r => $"{r.Id},{r.Name},{r.Age}\n")); // for each record creates a string
 
+            // returns csv
             return await Task.FromResult(csv);
         }
     }
