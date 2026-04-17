@@ -1,11 +1,18 @@
 using Producer.Application;
-using System.Collections.Generic;
 
 namespace ProducerService
 {
+    /* BackgroundService - built in class
+     * runs background tasks as long as the service is running
+     * polls the folders
+     * processes incoming xml files
+     * converts to csv
+     * publishes the result to message queue
+     * runs continuously
+     */
     public class Worker : BackgroundService //to run code continuously in background
     {
-        // dependencies
+        // dependencies 
         private readonly IFileFetcher _fileFetcher;
         private readonly IFileProcessor _fileProcessor;
         private readonly IConverterStrategy _converterStrategy;
@@ -28,35 +35,47 @@ namespace ProducerService
             };
         }
 
-        //batch processor
+        //batch processor - entry point for background service
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // folder path to fetch the files
             var folderPath = "D:\\Files";
             
+            //infinite loop to keep the service running
             while(!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
                     Console.WriteLine("fetching files");
-                    //fetching xml files
+
+                    /* fetching xml files
+                     * reads all xml files
+                     * loads content
+                     * returns List<FileData>
+                     */
                     var files = await _fileFetcher.GetFilesAsync(folderPath);
+
+                    // per file processing loop
                     foreach(var file in files)
                     {
                         try
                         {
-                            //process files
+                            //process files - validation - checks content
                             var processedFile = await _fileProcessor.ProcessAsync(file);
 
                             //convert xml to csv
                             var csvData = await _converterStrategy.ConvertAsync(processedFile.Content);
 
+                            //event raised - triggers subscribed event
                             _events.RaiseFileProcessed(processedFile.FileName);
 
+                            //logging
                             Console.WriteLine($"CSV generated file for: {processedFile.FileName}");
-
-                            //output
                             Console.WriteLine(csvData);
 
+                            /* publish to rabbitMQ
+                             * sends csv data as message
+                             */
                             _publisher.Publish(csvData);
 
                             Console.WriteLine("Message sent to RabbitMQ");
@@ -71,7 +90,10 @@ namespace ProducerService
                 {
                     Console.WriteLine($"Error in execution : {ex.Message}");
                 }
-                await Task.Delay(10000, stoppingToken); // wait 10sec, time interval
+                /* wait 10 sec, time interval
+                 * polls files every 10 sec
+                 */
+                await Task.Delay(10000, stoppingToken); 
             }
         }
     }
