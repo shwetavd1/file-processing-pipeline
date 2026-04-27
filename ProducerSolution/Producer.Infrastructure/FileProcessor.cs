@@ -1,25 +1,24 @@
-﻿/* read xml content
- * parse using xml parser
- * validate data
- */
-
-using Producer.Application;
+﻿using Producer.Application.Interfaces;
 using Producer.Domain;
 
 namespace Producer.Infrastructure
 {
-    public class FileProcessor : IFileProcessor
+    public class FileProcessor : IFileProcessor<FileData, string>
     {
-        public async Task<FileData> ProcessAsync(FileData file)
+        private readonly IConverterFactory _factory;
+
+        public FileProcessor(IConverterFactory factory)
         {
-            // check file has content or not if yes then only return
-            if (string.IsNullOrWhiteSpace(file.Content))
-                throw new Exception("File content is empty");
+            _factory = factory;
+        }
 
-            Console.WriteLine($"Processing File : {file.FileName}");
+        public async Task<string> ProcessAsync(FileData file)
+        {
+           if( file.Content == null)
+                throw new InvalidOperationException("File content is empty");
 
-            // returns completed task with result
-            return await Task.FromResult(file);
+            var converter = _factory.GetConverter(file.FileName);
+            return await converter.ConvertAsync(file.Content);
         }
     }
 }

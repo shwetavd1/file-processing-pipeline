@@ -1,43 +1,38 @@
-﻿//reads files from folder, reads each file content and returns list of objects
-using Producer.Application;
+﻿using Producer.Application.Interfaces;
 using Producer.Domain;
-
+using System.Security.Cryptography;
 namespace Producer.Infrastructure
 {
     public class FileFetcher : IFileFetcher
     {
-        public async Task<List<FileData>> GetFilesAsync(string folderPath)
+        public async Task<IEnumerable<IFileData>> GetFilesAsync(string folderPath)
         {
-            // file to list of object
-            var files = new List<FileData>();
- 
-            /* get all xml files from the specified folder name
-             * directory - built in class provides methods for directories
-             * here used because we are working with the directory 
-             * 
-             */
-            var paths = Directory.GetFiles(folderPath, "*.xml");
- 
+            if (string.IsNullOrWhiteSpace(folderPath))
+                throw new ArgumentException($"Folder path cannot be null, empty, or whitespace.{folderPath}");
+
+            if (!Directory.Exists(folderPath))
+                throw new DirectoryNotFoundException($"The folder path does not exist: {folderPath}");
+
+            var files = new List<IFileData>();
+
+            var paths = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories);
+
             foreach (var path in paths)
             {
-                /* reads file content
-                 * File - in built class - reads file content as string
-                 * await - waits till file reading is complete
-                 */
-                var content = await File.ReadAllTextAsync(path);
+                try
+                {
+                    var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-                //adding and collecting the files to list
-                files.Add(new FileData(
-                    //seperates the filepath and filename
-                    //Path - built in class
-                    Path.GetFileName(path), // stores filename only
-                    path,
-                    content
-                ));
-                //FileData object now contains - filename, filepath and content
+                    var fileData = new FileData(Path.GetFileName(path), path, stream);
+                    files.Add(fileData);
+                }
+                catch(Exception)
+                {
+                    continue;
+                }
+                
             }
- 
-            //returns collected FileData
+            await Task.CompletedTask;
             return files;
         }
     }

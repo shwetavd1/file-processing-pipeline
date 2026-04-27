@@ -1,41 +1,48 @@
-﻿/* read xml
- * convert to csv format
- */
+﻿using System.Text;
 using System.Xml.Linq;
-using Producer.Application;
+using Producer.Application.Interfaces;
 namespace Producer.Infrastructure
 {
-    public class XmlToCsvConverter : IConverterStrategy
+    public class XmlToCsvConverter : IFileConversion
     {
-        // used aysnc because file processing takes time
-        // method returns csv content as string
-        public async Task<string> ConvertAsync(string xmlContent)
+        public bool canHandle(string fileExtension)
+        => fileExtension.Equals(".xml", StringComparison.OrdinalIgnoreCase);
+
+        public async Task<string> ConvertAsync(Stream content)
         {
-            /* converts to string
-             * XDocument - built in class represents entire XML used for XML parsing
-             * it stores - root element, child element, element names, values
-             * parses the string into objects - XElement
-            */
-            var doc = XDocument.Parse(xmlContent);
+            var reader = new StreamReader(content);
+            var xmlContent = await reader.ReadToEndAsync();
 
-            //loops records
-            /* descendants - traverses xml tree and returns all child elements 
-             * it returns collection XElement
-            */
-            var records = doc.Descendants("Person").Select(x => new
+            return ConvertXmlToCsv(xmlContent);
+        }
+        public string ConvertXmlToCsv(string xmlContent)
+        {
+            var document = XDocument.Parse(xmlContent);
+
+            var root = document.Root;
+            if (root == null)
+                throw new InvalidOperationException("Invalid XML: Missing root element");
+
+            var records = root.Elements();
+
+            var headers = records
+                .SelectMany(r => r.Elements())
+                .Select(e => e.Name.LocalName)
+                .Distinct()
+                .ToList();
+
+            var csv = new StringBuilder();
+            csv.AppendLine(string.Join(",", headers));
+
+            foreach (var record in records)
             {
-                Id = x.Element("Id")?.Value,
-                Name = x.Element("Name")?.Value,
-                Age = x.Element("Age")?.Value
-            });
+                var values = headers
+                    .Select(h => record.Element(h)?.Value ?? string.Empty);
 
-            // convert collection of records into csv
-            var csv = "Id,Name,Age\n" //headers
-                + string.Join("\n", // combines all
-                records.Select(r => $"{r.Id},{r.Name},{r.Age}\n")); // for each record creates a string
+                csv.AppendLine(string.Join(",", values));
+            }
 
-            // returns csv
-            return await Task.FromResult(csv);
+            return csv.ToString();
         }
     }
 }
