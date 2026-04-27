@@ -1,66 +1,107 @@
-﻿using Producer.Application;
+﻿using Microsoft.Extensions.Options;
+using Producer.Application.Interfaces;
+using Producer.Application.Services;
 using RabbitMQ.Client;
 using System.Text;
 
 namespace Producer.Infrastructure
 {
-    public class MessagePublisher : IMessagePublisher
+    public class MessagePublisher : IMessagePublisher, IDisposable
     {
-        // connection to rabbitMQ server
         private readonly IConnection _connection;
-        // channel used to publish the messages
         private readonly IModel _channel;
+        private readonly RabbitMqSettings _settings;
 
-        /* connects to rabbitMQ
-         * creates communication channel
-         * declares queue
-         */
-        public MessagePublisher()
+        private const string MainQueue = "file-processing-queue";
+        public MessagePublisher(IOptions<RabbitMqSettings> options)
         {
-            // rabbitMQ connection configuration
-            var factory = new ConnectionFactory()
+
+            _settings = options.Value
+                ?? throw new ArgumentNullException(nameof(options));
+
+            //connection
+            var factory = new ConnectionFactory
             {
-                // server running on same machine
-                HostName = "localhost"
+                HostName = _settings.HostName
             };
-
-            // opens tcp connection to rabbitMQ broker
             _connection = factory.CreateConnection();
-            // creates channel - virtual connection
+            //channel
             _channel = _connection.CreateModel();
-
-            // queue declaration
+            // DLQ
             _channel.QueueDeclare(
-                // queue name
-                queue: "file-processing-queue",
-                // not persisted on disk
-                durable: false,
-                // accessible by other connections
+                queue: _settings.DeadLetter.Queue,
+                durable: true,
                 exclusive: false,
-                // queue stays even if unused
                 autoDelete: false,
-                // no advanced setting
                 arguments: null);
+
+            // main queue
+            _channel.QueueDeclare(
+                queue: _settings.QueueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: BuildQueueArguments()
+               );
         }
 
-        // takes csv string - sends to rabbitMQ
-        public void Publish(string message)
+        public Task Publish(string message, string fileName)
         {
-            // convert string to bytes - because rabbitMQ messages are transmitted as bytes not strings
-            // UTF8 standard encoding
             var body = Encoding.UTF8.GetBytes(message);
-            // send message
-            _channel.BasicPublish(
-                // default rabbitMQ exchange
-                exchange: "",
-                // queue name
-                routingKey: "file-processing-queue",
-                // no headers or metadata
-                basicProperties: null,
-                // message as bytes
-                body: body);
-            // logging
-            Console.WriteLine("Message sent to RabbitMQ");
+
+            var properties = _channel.CreateBasicProperties();
+            properties.Persistent = true;
+            properties.MessageId = Guid.NewGuid().ToString();
+            properties.Headers = new Dictionary<string, object>
+            {
+                {"file-name", fileName },
+                {"source", "file-processing-producer" },
+                {"created-at", DateTime.UtcNow.ToString("o") }
+            };
+            try
+            {
+                _channel.BasicPublish(
+                    exchange: "",
+                    routingKey: MainQueue,
+                    basicProperties: properties,
+                    body: body);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to publish the message : {ex.Message}");
+                throw;
+            }
+
+            Console.WriteLine($"Message sent | MessageId: {properties.MessageId} | File: {fileName}");
+            Console.WriteLine(message); 
+            return Task.CompletedTask;
+        }
+        private IDictionary<string, object> BuildQueueArguments()
+        {
+            var args = new Dictionary<string, object>();
+
+            if (_settings.MessageTtlMs > 0)
+                args["x-message-ttl"] = _settings.MessageTtlMs;
+
+            if (_settings.MaxQueueLength > 0)
+                args["x-max-length"] = _settings.MaxQueueLength;
+
+            if (_settings.DeadLetter != null)
+            {
+                args["x-dead-letter-exchange"] =
+                    _settings.DeadLetter.Exchange;
+
+                args["x-dead-letter-routing-key"] =
+                    _settings.DeadLetter.RoutingKey;
+            }
+
+            return args;
+        }
+
+        public void Dispose()
+        {
+            _channel?.Close();
+            _connection?.Close();
         }
     }
 }

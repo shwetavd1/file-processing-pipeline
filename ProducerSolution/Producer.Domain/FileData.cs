@@ -1,16 +1,22 @@
-﻿// represents the file object
-
-namespace Producer.Domain
+﻿namespace Producer.Domain
 {
-    public class FileData
+    public interface IFileData
     {
-        // can only read but cannot modify from outside - used encapsulation
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
+        IList<IFileData> Folders { get; }
+    }
+
+    public class FileData : IFileData
+    {
         public string FileName { get; private set; }
         public string FilePath { get; private set; }
-        public string Content { get; private set; }
+        public Stream Content { get; private set; }
+        string IFileData.FileName { get => FileName; set => FileName = value; }
+        string IFileData.FilePath { get => FilePath; set => FilePath = value; }
+        public IList<IFileData> Folders { get; } = new List<IFileData>();
 
-        //object to be created with these values
-        public FileData(string fileName, string filePath, string content)
+        public FileData(string fileName, string filePath, Stream content)
         {
             FileName = fileName;
             FilePath = filePath;
