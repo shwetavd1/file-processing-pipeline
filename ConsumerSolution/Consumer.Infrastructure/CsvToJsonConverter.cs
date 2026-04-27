@@ -1,64 +1,58 @@
 ﻿using Consumer.Application;
 using Consumer.Domain;
 
-namespace Consumer.Infrastructure //Infrasturucture layer contains actual implementation
+namespace Consumer.Infrastructure 
 {
-    public class CsvToJsonConverter : ICsvToJsonConverter // Interface defines what to do, class defines how to do [Abstraction+Dependency Inversion]
+    public class CsvToJsonConverter : ICsvToJsonConverter<Dictionary<string, object>>
     {
-        public async Task<List<ProcessedData>> ConvertAsync (string csvData) 
+        public async Task<List<Dictionary<string,object>>> ConvertAsync(string csvContent)
         {
-            var result = new List<ProcessedData>(); // creating empty list to store output.
+            var result = new List<Dictionary<string,object>> ();
 
-            if (string.IsNullOrWhiteSpace (csvData))// it prevents empty input and avoid crash later
+            if (string.IsNullOrWhiteSpace(csvContent))
             {
                 throw new ArgumentException("CSV data is empty");
             }
-            var lines = csvData.Split ('\n', StringSplitOptions.RemoveEmptyEntries); //breaks csv into rows //RemoveEmptyEntries used to avoid empty rows
+            var lines = csvContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
             if (lines.Length <= 1)
             {
                 throw new Exception("No data rows found in CSV");
             }
-            foreach (var line in lines.Skip(1)) //skip header // Loop through all rows except first because first row is header
+            var headers = lines[0].Split(','); //read header row
+            foreach (var line in lines.Skip(1)) // process each row except header
             {
-                try //used try catch for if one row fails, others still process, to make system robust
+                try
                 {
                     var values = line.Split(','); //split rows into columns
 
-                    //validation to check column count
-                    if (values.Length<3)
+                    if (values.Length != headers.Length)
                     {
-                        throw new Exception($"Invalid row format:{line}");
+                        throw new Exception($"Column count mismatched in row:{line}");
                     }
-                    //validation for safe parsing
-                    if (!int.TryParse(values[0], out int id)) // tryparse= let me check first, then convert //try converting- if it fails dont crash.
+                    if (!int.TryParse(values[0], out int id))
                     {
                         throw new Exception($"Invalid Id:{values[0]}");
                     }
-                    if (!int.TryParse(values[0], out int age))
+                    if (!int.TryParse(values[2], out int age))
                     {
                         throw new Exception($"Invalid Age:{values[2]}");
                     }
-                    var data = new ProcessedData
+                    var rowData = new Dictionary<string, object>();
+                    for (int i = 0; i < headers.Length; i++)
                     {
-                        Id = int.Parse(values[0]), //parse()= use when data is trusted // i am sure the value is correct, just convert it. // parse throws an exception if convertsion fails.
-                        Name = values[1],
-                        Age = int.Parse(values[2]) // used int.Parse bcoz csv gives string but here id and age are numbers
-                    };// convert string values into structured object
-                    result.Add(data); // it stores converted object
+                        rowData[headers[i].Trim()] = values[i].Trim();
+                    }
+                    result.Add(rowData);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine($"Error processing row: {line}");
                     Console.WriteLine($"Reason: {ex.Message}");
-                }   
+                }
             }
-            return await Task.FromResult(result);
+            return result;
         }
     }
 }
 
-/*
-for this we can we csv library(CsvHelper) it handles comples csv, handles quotes,commas inside value.
-but i am not using it here because for learning and simplicity purpose, i have implemented manual parsing.
- */

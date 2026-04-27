@@ -1,11 +1,12 @@
-﻿using System;
+﻿
 using Consumer.Domain;
 
 namespace Consumer.Application
 {
-	public interface IMessageConsumer
+	public interface IMessageConsumer<T>
 	{
-		event Action<MessageData> OnMessageReceived;// interface defines contract, Event should be part of contract so worker doesn't depend on concrete class
-		Task ConsumeAsync(); // used interface for loose coupling, can be replace inplementation easily
-	} //reads message from queue
+		//consumer can work with any type of message 
+		event EventHandler<MessageData<T>> OnMessageReceived;// interface defines contract, Event should be part of contract so worker doesn't depend on concrete class
+		Task ConsumeAsync();
+	} 
 }
