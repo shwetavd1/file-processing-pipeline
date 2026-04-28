@@ -12,14 +12,13 @@ namespace Consumer.Infrastructure
     {
         private readonly IConnection _connection;
         private IModel? _channel;
+        private static int _counter = 1;
 
         //timer for time based batching
         private Timer _timer;
 
         //lock for thread safety
         private readonly object _lock = new();
-
-        
 
         //Batch storage
         private readonly List<(MessageData<string> message, ulong deliveryTag)> _batch = new(); // store message+deliveryTag(needed for ACK)
@@ -41,6 +40,12 @@ namespace Consumer.Infrastructure
 
             var consumer = new EventingBasicConsumer(_channel);
 
+            _channel.BasicConsume(
+                queue: queueName,
+                autoAck: true,
+                consumer: consumer
+            );
+
             consumer.Received += async (model, ea) =>
             {
                 var body = ea.Body.ToArray();
@@ -51,24 +56,68 @@ namespace Consumer.Infrastructure
                     Content = messageString,
                 };
 
-                Console.WriteLine("Message received from RabbitMQ");
-                Console.WriteLine(messageString);
-
-                var messageData = new MessageData<string>
+                //thread safe add
+                lock (_lock)
                 {
-                    Id = _counter++,
-                    Content = messageString
-                };
+                    _batch.Add((messageData, ea.DeliveryTag));
+                }
+                Console.WriteLine($"Addedto batch:{messageData.Id}");
 
-                OnMessageReceived?.Invoke(this, messageData);
+                //size-based trigeer
+                if (_batch.Count >= BatchSize)
+                {
+                    await ProcessBatch();
+                }
             };
 
-            _channel.BasicConsume(
+            _channel.BasicConsume
+            (
                 queue: queueName,
-                autoAck: true,
+                autoAck: false, // message should be removed only after successful processing
                 consumer: consumer
             );
+            await Task.CompletedTask;
+        }
 
+        //batch processing method
+        private async Task ProcessBatch()
+        {
+            List<(MessageData<string> message, ulong deliveryTag)> batchCopy;
+            lock (_lock)
+            {
+                if (_batch.Count == 0) return;
+                batchCopy = new List<(MessageData<string>, ulong)>(_batch);
+                _batch.Clear();
+            }
+            Console.WriteLine($"Processing batch of {batchCopy.Count} message...");
+            try
+            {
+                //process all message(awaited)
+                foreach (var item in batchCopy)
+                {
+                    OnMessageReceived?.Invoke(this, item.message);
+                }
+                // ACK only after success
+                foreach (var item in batchCopy)
+                {
+                    _channel.BasicAck(item.deliveryTag, false);
+                }
+                Console.WriteLine("Batch processed successfully. ACK sent");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Batch Failed: {ex.Message}");
+
+                //NACK->send to DLQ
+                foreach (var item in batchCopy)
+                {
+                    _channel.BasicNack(item.deliveryTag, false, false);
+                }
+            }
+            finally
+            {
+                _batch.Clear();
+            }
             await Task.CompletedTask;
         }
         private async Task ProcessBatchSafe()
