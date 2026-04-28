@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace Consumer.Application
 {
 	public interface IStatusTracker

@@ -1,5 +1,4 @@
 ﻿using Consumer.Domain;
-
 namespace Consumer.Application
 {
 	public interface ICsvToJsonConverter<T>

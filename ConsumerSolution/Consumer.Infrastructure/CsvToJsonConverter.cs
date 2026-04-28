@@ -7,7 +7,7 @@ namespace Consumer.Infrastructure
     {
         public async Task<List<Dictionary<string,object>>> ConvertAsync(string csvContent)
         {
-            var result = new List<Dictionary<string,object>> ();
+            var result = new List<Dictionary<string,object>>();
             if (string.IsNullOrWhiteSpace(csvContent))
             {
                 throw new ArgumentException("CSV data is empty");

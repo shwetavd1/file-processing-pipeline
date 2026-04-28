@@ -4,7 +4,7 @@ namespace Consumer.Infrastructure
 {
 	public class StatusTracker : IStatusTracker
 	{
-		private readonly Dictionary<int, string> _statusStore = new(); 
+		private readonly Dictionary<int, string> _statusStore =new(); 
 		public StatusTracker()
 		{
 			_statusStore = new Dictionary<int, string>();

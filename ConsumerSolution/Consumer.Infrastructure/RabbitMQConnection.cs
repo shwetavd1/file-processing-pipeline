@@ -16,7 +16,7 @@ namespace Consumer.Infrastructure
             { 
                 HostName = "localhost" 
             };
-            _connection = factory.CreateConnection(); // creates only once
+            _connection = factory.CreateConnection(); //creates only once
         }
         public IConnection GetConnection() // GetConnection method is used to retrieve the established connection to RabbitMQ server. // It returns the IConnection instance that can be used by other classes (like RabbitMQConsumer) to create channels and communicate with RabbitMQ server.
         {

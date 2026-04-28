@@ -30,7 +30,6 @@ namespace ConsumerTests
             });
 
             var worker = new Worker(consumerMock.Object, converterMock.Object, statusMock.Object);
-            
             var message = new MessageData<string> 
             {
                 Id = 1,
