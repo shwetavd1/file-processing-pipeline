@@ -35,32 +35,11 @@ namespace Consumer.Infrastructure
         {
             Console.WriteLine("Connecting to RabbitMQ...");
 
-            _channel = _connection.CreateModel();// channel used to publish the messages
+            _channel = _connection.CreateModel();
 
-            string queueName = "file-processing-queue-v2";
+            string queueName = "file-processing-pipeline-20260418-2210";
 
-            //DLQ
-            _channel.QueueDeclare(
-                queue: "file-processing-dlq-v2",
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null
-            );
-
-            //Main Queue
-            _channel.QueueDeclare
-            (
-                queue: queueName,
-                durable: false,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null
-            );
-
-            
-
-            var consumer = new EventingBasicConsumer(_channel); //consumer subscribe to message
+            var consumer = new EventingBasicConsumer(_channel);
 
             consumer.Received += async (model, ea) =>
             {
@@ -72,68 +51,24 @@ namespace Consumer.Infrastructure
                     Content = messageString,
                 };
 
-                //thread safe add
-                lock (_lock)
-                {
-                    _batch.Add((messageData, ea.DeliveryTag));
-                }
-                Console.WriteLine($"Addedto batch:{messageData.Id}");
+                Console.WriteLine("Message received from RabbitMQ");
+                Console.WriteLine(messageString);
 
-                //size-based trigeer
-                if (_batch.Count >= BatchSize)
+                var messageData = new MessageData<string>
                 {
-                    await ProcessBatch();
-                }
+                    Id = _counter++,
+                    Content = messageString
+                };
+
+                OnMessageReceived?.Invoke(this, messageData);
             };
 
-            _channel.BasicConsume
-            (
+            _channel.BasicConsume(
                 queue: queueName,
-                autoAck: false, // message should be removed only after successful processing
+                autoAck: true,
                 consumer: consumer
             );
-            await Task.CompletedTask;
-        }
 
-        //batch processing method
-        private async Task ProcessBatch()
-        {
-            List<(MessageData<string> message, ulong deliveryTag)> batchCopy;
-            lock (_lock)
-            {
-                if (_batch.Count == 0) return;
-                batchCopy = new List<(MessageData<string>, ulong)>(_batch);
-                _batch.Clear();
-            }
-            Console.WriteLine($"Processing batch of {batchCopy.Count} message...");
-            try
-            {
-                //process all message(awaited)
-                foreach (var item in batchCopy)
-                {
-                    OnMessageReceived?.Invoke(this, item.message);
-                }
-                // ACK only after success
-                foreach (var item in batchCopy)
-                {
-                    _channel.BasicAck(item.deliveryTag, false);
-                }
-                Console.WriteLine("Batch processed successfully. ACK sent");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Batch Failed: {ex.Message}");
-
-                //NACK->send to DLQ
-                foreach (var item in batchCopy)
-                {
-                    _channel.BasicNack(item.deliveryTag, false, false);
-                }
-            }
-            finally
-            {
-                _batch.Clear();
-            }
             await Task.CompletedTask;
         }
         private async Task ProcessBatchSafe()
