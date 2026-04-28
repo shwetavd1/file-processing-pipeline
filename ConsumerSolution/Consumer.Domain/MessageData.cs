@@ -5,7 +5,7 @@ namespace Consumer.Domain
 	{
 		public int Id { get; init; }
 		public T Content { get; set; } = default! ; // message can carry any type instead of just string
-		public DateTime ReceivedTime { get; init; } = DateTime.UtcNow;//UTC is used to avoid timezone issues, especially in distributed systems.
+		public DateTime ReceivedTime { get; init; } = DateTime.UtcNow; //UTC is used to avoid timezone issues, especially in distributed systems.
 	}
 }
 

@@ -38,7 +38,6 @@ namespace ConsumerTests
             };
             //Act
             await worker.HandleMessageReceived(message);
-
             //Assert
             statusMock.Verify(x=>x.MarkAsPending(1), Times.Once); 
             statusMock.Verify(x=>x.MarkAsCompleted(1), Times.Once); 

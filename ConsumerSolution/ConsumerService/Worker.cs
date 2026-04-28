@@ -17,7 +17,7 @@ namespace ConsumerService
 
             _consumer.OnMessageReceived += async (sender, message) =>
             {
-                await HandleMessageReceived(message); // subscribe to the event
+                await HandleMessageReceived(message); //subscribe to the event
             };
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)

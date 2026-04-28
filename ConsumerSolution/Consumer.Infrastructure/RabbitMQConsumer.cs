@@ -14,7 +14,6 @@ namespace Consumer.Infrastructure
         private IModel? _channel;
         private static int _counter = 1;
 
-
         public event EventHandler<MessageData<string>>? OnMessageReceived;  // rabbitMQ messages are transmitted as bytes not strings, so we need to convert bytes to string before invoking the event. // MessageData<string> means that the message data will be of type string, which is the CSV content in this case.
 
         public RabbitMQConsumer(RabbitMQConnection connectionProvider)

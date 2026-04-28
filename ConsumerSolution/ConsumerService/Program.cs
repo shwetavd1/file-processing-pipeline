@@ -7,7 +7,7 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
 
 builder.Services.AddSingleton<RabbitMQConnection>(); //only one connection for entire application
-builder.Services.AddTransient<IMessageConsumer<string>, RabbitMQConsumer>(); // multiple consumers
+builder.Services.AddTransient<IMessageConsumer<string>, RabbitMQConsumer>(); //multiple consumers
 builder.Services.AddTransient<ICsvToJsonConverter<Dictionary<string,object>>, CsvToJsonConverter>();
 builder.Services.AddTransient<IStatusTracker, StatusTracker>();
 

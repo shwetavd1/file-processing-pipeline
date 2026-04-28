@@ -11,10 +11,8 @@ namespace Consumer.Tests
             //arrange 
             var converter = new CsvToJsonConverter(); 
             var csv = "Id,Name,Value\n1,Prajakta,25\n2,Shweta,24"; 
-
             //act 
             var result = await converter.ConvertAsync(csv);
-
             //assert //used to verify result
             Assert.NotNull(result); 
             Assert.Equal(2, result.Count); 

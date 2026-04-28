@@ -10,7 +10,6 @@ namespace Consumer.Infrastructure
     public class RabbitMQConnection
     {
         private readonly IConnection _connection; // IConnection is an interface provided by RabbitMQ.Client library that represents a connection to RabbitMQ server. // _connection is used to create channels for communication with RabbitMQ server.
-
         public RabbitMQConnection()
         {
             var factory = new ConnectionFactory() // ConnectionFactory is a class provided by RabbitMQ.Client library to create connections to RabbitMQ server. // factory is used to configure the connection settings such as hostname, port, username, password, etc.

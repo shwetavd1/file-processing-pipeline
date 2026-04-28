@@ -24,6 +24,5 @@ namespace Consumer.Infrastructure
 			_statusStore[messageId] = "Failed: {reason}";
 			Console.WriteLine($"Message {messageId} is Failed: {reason}");
 		}
-
 	}
 }
