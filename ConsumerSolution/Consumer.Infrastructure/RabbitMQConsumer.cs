@@ -23,45 +23,36 @@ namespace Consumer.Infrastructure
         {
             Console.WriteLine("Connecting to RabbitMQ...");
 
-            _channel = _connection.CreateModel();// channel used to publish the messages
+            _channel = _connection.CreateModel();
 
-            string queueName = "file-processing-queue";
+            string queueName = "file-processing-pipeline-20260418-2210";
 
-            _channel.QueueDeclare
-            (
-                queue: queueName, 
-                durable: false, 
-                exclusive: false, 
-                autoDelete: false, 
-                arguments: null
-            );
-
-            var consumer = new EventingBasicConsumer(_channel); //consumer subscribe to message
+            var consumer = new EventingBasicConsumer(_channel);
 
             consumer.Received += (model, ea) =>
             {
-                // convert bytes to string - because rabbitMQ messages are transmitted as bytes not strings
-                var body = ea.Body.ToArray(); 
+                var body = ea.Body.ToArray();
                 var messageString = Encoding.UTF8.GetString(body);
 
                 Console.WriteLine("Message received from RabbitMQ");
                 Console.WriteLine(messageString);
-                
+
                 var messageData = new MessageData<string>
                 {
-                    Id = _counter ++,
+                    Id = _counter++,
                     Content = messageString
                 };
-                OnMessageReceived?.Invoke(this, messageData);// trigger the event to notify worker that a message has been received
+
+                OnMessageReceived?.Invoke(this, messageData);
             };
 
-            _channel.BasicConsume
-            (
-                queue: queueName, 
-                autoAck: true, 
+            _channel.BasicConsume(
+                queue: queueName,
+                autoAck: true,
                 consumer: consumer
             );
-            await Task.CompletedTask; 
+
+            await Task.CompletedTask;
         }
     }
 }

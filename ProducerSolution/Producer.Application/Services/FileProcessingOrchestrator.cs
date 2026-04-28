@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Producer.Application.Interfaces;
 using Producer.Application.Services;
 using Producer.Domain;
@@ -9,21 +10,25 @@ public class FileProcessingOrchestrator : IFileProcessingOrchestrator
     private readonly IFileProcessor<FileData, string> _fileProcessor;
     private readonly IMessagePublisher _publisher;
     private readonly FileSettings _settings;
+    private readonly ILogger<FileProcessingOrchestrator> _logger;
 
     public FileProcessingOrchestrator(
         IFileFetcher fileFetcher,
         IFileProcessor<FileData, string> fileProcessor,
         IMessagePublisher publisher,
-        IOptions<FileSettings> options)
+        IOptions<FileSettings> options,
+        ILogger<FileProcessingOrchestrator> logger)
     {
         _fileFetcher = fileFetcher;
         _fileProcessor = fileProcessor;
         _publisher = publisher;
         _settings = options.Value;
+        _logger = logger;
     }
 
     public async Task RunOnceAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Starting file processing");
         var files = await _fileFetcher.GetFilesAsync(_settings.RootFolderPath);
 
         foreach (var file in files)
@@ -32,6 +37,7 @@ public class FileProcessingOrchestrator : IFileProcessingOrchestrator
 
             try
             {
+                _logger.LogInformation("Processing file {fileName}", file.FileName);
                 var result = await _fileProcessor
                     .ProcessAsync((FileData)file);
 
@@ -41,11 +47,11 @@ public class FileProcessingOrchestrator : IFileProcessingOrchestrator
             }
             catch (NotSupportedException)
             {
-                // Unsupported file type – skip safely
+                _logger.LogWarning("Skipping unsupported file {fileName}", file.FileName);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Log and continue (logging can be added later)
+                _logger.LogError(ex, "Failed to process file {fileName}", file.FileName);
             }
             finally
             {
@@ -53,5 +59,6 @@ public class FileProcessingOrchestrator : IFileProcessingOrchestrator
                     fd.Content?.Dispose();
             }
         }
+        _logger.LogInformation("Completed file processing");
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Producer.Application.Interfaces;
 using Producer.Application.Services;
 using RabbitMQ.Client;
@@ -11,13 +12,13 @@ namespace Producer.Infrastructure
         private readonly IConnection _connection;
         private readonly IModel _channel;
         private readonly RabbitMqSettings _settings;
-
-        private const string MainQueue = "file-processing-queue";
-        public MessagePublisher(IOptions<RabbitMqSettings> options)
+        private readonly ILogger<MessagePublisher> _logger;
+        public MessagePublisher(IOptions<RabbitMqSettings> options, ILogger<MessagePublisher> logger)
         {
-
+            _logger =  logger;
             _settings = options.Value
                 ?? throw new ArgumentNullException(nameof(options));
+            _logger.LogInformation("Initializing RabbitMQ publisher");
 
             //connection
             var factory = new ConnectionFactory
@@ -62,13 +63,14 @@ namespace Producer.Infrastructure
             {
                 _channel.BasicPublish(
                     exchange: "",
-                    routingKey: MainQueue,
+                    routingKey: _settings.QueueName,
                     basicProperties: properties,
                     body: body);
+                _logger.LogInformation("Message published successfully | File:{FileName}", fileName);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to publish the message : {ex.Message}");
+                _logger.LogError(ex, "Failed to publish message for file : {fileName}", fileName);
                 throw;
             }
 
