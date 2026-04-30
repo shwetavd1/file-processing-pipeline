@@ -16,10 +16,9 @@ namespace Producer.Infrastructure.Messaging
         private readonly object _lock = new object();
         public MessagePublisher(IOptions<RabbitMqSettings> options, ILogger<MessagePublisher> logger)
         {
-            _logger =  logger;
+
             _settings = options.Value
                 ?? throw new ArgumentNullException(nameof(options));
-            _logger.LogInformation("Initializing RabbitMQ publisher");
 
             //connection
             var factory = new ConnectionFactory

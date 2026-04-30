@@ -4,8 +4,9 @@ using ConsumerService;
 
 var builder = Host.CreateApplicationBuilder(args); 
 
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<Worker>());
 
+builder.Services.AddSingleton<Worker>();
 builder.Services.AddSingleton<RabbitMQConnection>(); //only one connection for entire application
 builder.Services.AddTransient<IMessageConsumer<string>, RabbitMQConsumer>(); // multiple consumers
 builder.Services.AddTransient<ICsvToJsonConverter<Dictionary<string,object>>, CsvToJsonConverter>();

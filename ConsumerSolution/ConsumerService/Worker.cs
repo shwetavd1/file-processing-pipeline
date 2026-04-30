@@ -15,10 +15,10 @@ namespace ConsumerService
             _converter = converter;
             _statusTracker = statusTracker;
 
-            _consumer.OnMessageReceived += async (sender, message) =>
+            /*_consumer.OnMessageReceived += async (sender, message) =>
             {
                 await HandleMessageReceived(message); // subscribe to the event
-            };
+            };*/
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {

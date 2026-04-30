@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Producer.Application.Configurations;
 using Producer.Application.Messaging;
 using Producer.Application.Processing;
