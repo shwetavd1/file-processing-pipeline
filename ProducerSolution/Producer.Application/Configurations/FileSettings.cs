@@ -1,4 +1,4 @@
-﻿namespace Producer.Application.Services
+﻿namespace Producer.Application.Configurations
 {
     public class FileSettings
     {

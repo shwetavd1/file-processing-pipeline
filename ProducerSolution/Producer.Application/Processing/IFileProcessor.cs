@@ -1,6 +1,4 @@
-﻿using Producer.Domain;
-
-namespace Producer.Application.Interfaces
+﻿namespace Producer.Application.Messaging
 {
     public interface IFileProcessor<TInput, TOutput>
     {
