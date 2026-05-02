@@ -1,17 +1,16 @@
-﻿using Producer.Application.Interfaces;
-using Producer.Domain;
-using System.Security.Cryptography;
-namespace Producer.Infrastructure
+﻿using Producer.Application.Processing;
+using Producer.Domain.Entities;
+namespace Producer.Infrastructure.Storage
 {
     public class FileFetcher : IFileFetcher
     {
         public async Task<IEnumerable<IFileData>> GetFilesAsync(string folderPath)
         {
             if (string.IsNullOrWhiteSpace(folderPath))
-                throw new ArgumentException($"Folder path cannot be null, empty, or whitespace.{folderPath}");
+                throw new ArgumentException($"Folder path cannot be null or empty: {folderPath}");
 
             if (!Directory.Exists(folderPath))
-                throw new DirectoryNotFoundException($"The folder path does not exist: {folderPath}");
+                throw new DirectoryNotFoundException($"Folder not found: {folderPath}");
 
             var files = new List<IFileData>();
 
@@ -21,16 +20,13 @@ namespace Producer.Infrastructure
             {
                 try
                 {
-                    var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-
-                    var fileData = new FileData(Path.GetFileName(path), path, stream);
+                    var fileData = new FileData(Path.GetFileName(path), path, null);
                     files.Add(fileData);
                 }
-                catch(Exception)
+                catch
                 {
                     continue;
                 }
-                
             }
             await Task.CompletedTask;
             return files;

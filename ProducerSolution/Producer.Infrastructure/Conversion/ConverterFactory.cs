@@ -1,15 +1,15 @@
-﻿using Producer.Application.Interfaces;
-namespace Producer.Infrastructure
+﻿using Producer.Application.Conversion;
+namespace Producer.Infrastructure.Conversion
 {
     public class ConverterFactory : IConverterFactory
     {
-        private readonly IEnumerable<IFileConversion> _converters;
+        private readonly IEnumerable<IFileConverter> _converters;
 
-        public ConverterFactory(IEnumerable<IFileConversion> converters)
+        public ConverterFactory(IEnumerable<IFileConverter> converters)
         {
             _converters = converters;
         }
-        public IFileConversion GetConverter(string fileName)
+        public IFileConverter GetConverter(string fileName)
         {
             var extension = Path.GetExtension(fileName);
 

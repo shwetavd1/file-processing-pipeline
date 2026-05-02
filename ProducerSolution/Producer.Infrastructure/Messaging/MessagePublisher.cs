@@ -1,19 +1,20 @@
 ﻿using Microsoft.Extensions.Options;
-using Producer.Application.Interfaces;
-using Producer.Application.Services;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using System.Text;
+using Producer.Application.Configurations;
+using Producer.Application.Interfaces;
 
-namespace Producer.Infrastructure
+namespace Producer.Infrastructure.Messaging
 {
     public class MessagePublisher : IMessagePublisher, IDisposable
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
         private readonly RabbitMqSettings _settings;
-
-        private const string MainQueue = "file-processing-queue";
-        public MessagePublisher(IOptions<RabbitMqSettings> options)
+        private readonly ILogger<MessagePublisher> _logger;
+        private readonly object _lock = new object();
+        public MessagePublisher(IOptions<RabbitMqSettings> options, ILogger<MessagePublisher> logger)
         {
 
             _settings = options.Value
@@ -48,33 +49,36 @@ namespace Producer.Infrastructure
         public Task Publish(string message, string fileName)
         {
             var body = Encoding.UTF8.GetBytes(message);
-
-            var properties = _channel.CreateBasicProperties();
-            properties.Persistent = true;
-            properties.MessageId = Guid.NewGuid().ToString();
-            properties.Headers = new Dictionary<string, object>
+            lock (_lock)
+            {
+                var properties = _channel.CreateBasicProperties();
+                properties.Persistent = true;
+                properties.MessageId = Guid.NewGuid().ToString();
+                properties.Headers = new Dictionary<string, object>
             {
                 {"file-name", fileName },
                 {"source", "file-processing-producer" },
                 {"created-at", DateTime.UtcNow.ToString("o") }
             };
-            try
-            {
-                _channel.BasicPublish(
-                    exchange: "",
-                    routingKey: MainQueue,
-                    basicProperties: properties,
-                    body: body);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to publish the message : {ex.Message}");
-                throw;
-            }
+                try
+                {
+                    _channel.BasicPublish(
+                        exchange: "",
+                        routingKey: _settings.QueueName,
+                        basicProperties: properties,
+                        body: body);
+                    _logger.LogInformation("Message published successfully | File:{FileName}", fileName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to publish message for file : {fileName}", fileName);
+                    throw;
+                }
 
-            Console.WriteLine($"Message sent | MessageId: {properties.MessageId} | File: {fileName}");
-            Console.WriteLine(message); 
-            return Task.CompletedTask;
+                Console.WriteLine($"Message sent | MessageId: {properties.MessageId} | File: {fileName}");
+                Console.WriteLine(message);
+                return Task.CompletedTask;
+            }
         }
         private IDictionary<string, object> BuildQueueArguments()
         {
@@ -97,7 +101,6 @@ namespace Producer.Infrastructure
 
             return args;
         }
-
         public void Dispose()
         {
             _channel?.Close();

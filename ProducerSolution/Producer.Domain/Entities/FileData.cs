@@ -1,4 +1,4 @@
-﻿namespace Producer.Domain
+﻿namespace Producer.Domain.Entities
 {
     public interface IFileData
     {

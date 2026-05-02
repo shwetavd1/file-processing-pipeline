@@ -1,6 +1,4 @@
-﻿using Producer.Application.Services;
-
-namespace Producer.Application.Services
+﻿namespace Producer.Application.Services
 {
     public class IntervalPollingService : IPollingService
     {

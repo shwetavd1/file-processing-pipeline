@@ -1,5 +1,5 @@
-﻿using Producer.Domain;
-namespace Producer.Application.Interfaces
+﻿using Producer.Domain.Entities;
+namespace Producer.Application.Processing
 {
     public interface IFileFetcher
     {
