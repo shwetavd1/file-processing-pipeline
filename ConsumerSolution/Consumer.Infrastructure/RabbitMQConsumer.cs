@@ -36,15 +36,28 @@ namespace Consumer.Infrastructure
 
             _channel = _connection.CreateModel();
 
-            string queueName = "file-processing-pipeline-20260418-2210";
+            string queueName = "file-processing-pipeline-200";
+            string dlqName = "file-processing-pipeline-200-dlq";
+
+            //declare DLQ
+            _channel.QueueDeclare(
+                queue: dlqName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null
+            );
+
+            //declare main queue
+            //_channel.QueueDeclare(
+            //    queue: queueName,
+            //    durable: false,
+            //    exclusive: false,
+            //    autoDelete: false,
+            //    arguments: BuildQueueArguments(dlqName)
+            //);
 
             var consumer = new EventingBasicConsumer(_channel);
-
-            _channel.BasicConsume(
-                queue: queueName,
-                autoAck: true,
-                consumer: consumer
-            );
 
             consumer.Received += async (model, ea) =>
             {
@@ -69,14 +82,15 @@ namespace Consumer.Infrastructure
                     await ProcessBatch();
                 }
             };
-
+            Console.WriteLine($"consuming from queue:{queueName}");
             _channel.BasicConsume
             (
                 queue: queueName,
                 autoAck: false, // message should be removed only after successful processing
                 consumer: consumer
             );
-            await Task.CompletedTask;
+            Console.WriteLine("Consumer started....");
+            //await Task.CompletedTask;
         }
 
         //batch processing method
@@ -88,6 +102,7 @@ namespace Consumer.Infrastructure
                 if (_batch.Count == 0) return;
                 batchCopy = new List<(MessageData<string>, ulong)>(_batch);
                 _batch.Clear();
+                _counter = 1;
             }
             Console.WriteLine($"Processing batch of {batchCopy.Count} message...");
             try
@@ -119,12 +134,13 @@ namespace Consumer.Infrastructure
                 _batch.Clear();
             }
             await Task.CompletedTask;
+
         }
         private async Task ProcessBatchSafe()
         {
             if (_batch.Count == 0) 
                 return;
             await ProcessBatch();
-        }
+        }   
     }
 }    

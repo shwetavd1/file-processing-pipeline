@@ -15,10 +15,10 @@ namespace ConsumerService
             _converter = converter;
             _statusTracker = statusTracker;
 
-            /*_consumer.OnMessageReceived += async (sender, message) =>
+            _consumer.OnMessageReceived += async (sender, message) =>
             {
                 await HandleMessageReceived(message); // subscribe to the event
-            };*/
+            };
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -27,6 +27,7 @@ namespace ConsumerService
         }
         public async Task HandleMessageReceived(MessageData <string> message)
         {
+            Console.WriteLine("HandleMessageReceived triggered");
             try
             {
                 Console.WriteLine("Message received from RabbitMQ");
